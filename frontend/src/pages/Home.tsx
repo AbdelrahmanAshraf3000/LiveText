@@ -1,5 +1,6 @@
 // src/pages/Landing.tsx
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { FaUsers, FaCodeBranch, FaBolt, FaSun, FaMoon, FaTwitter, FaGithub } from 'react-icons/fa';
 
 interface FeatureProps {
@@ -90,12 +91,12 @@ const Home: React.FC = () => {
             LiveText is your real-time text editor for seamless team writing, coding, and brainstorming. No lag. No limits.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <button className="px-8 py-3.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 transition-all duration-300 transform hover:-translate-y-0.5 shadow-md hover:shadow-lg font-medium">
+            <Link to="/signup" className="px-8 py-3.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 transition-all duration-300 transform hover:-translate-y-0.5 shadow-md hover:shadow-lg font-medium text-center">
               Get Started - It's Free
-            </button>
-            <button className="px-8 py-3.5 border border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400 rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-all duration-300 font-medium">
-              Watch Demo
-            </button>
+            </Link>
+            <Link to="/login" className="px-8 py-3.5 border border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400 rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-all duration-300 font-medium text-center">
+              Sign in
+            </Link>
           </div>
         </section>
 
@@ -194,9 +195,9 @@ const Home: React.FC = () => {
         <section className="text-center py-20 px-6 bg-gradient-to-br from-indigo-600 to-purple-600 dark:from-indigo-800 dark:to-purple-800 text-white">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to write together?</h2>
           <p className="text-lg mb-8 max-w-2xl mx-auto opacity-90">Start your first document in seconds. No sign-up required.</p>
-          <button className="px-8 py-4 bg-white text-indigo-600 rounded-xl hover:bg-gray-100 transition-all duration-300 transform hover:-translate-y-0.5 shadow-lg hover:shadow-xl font-semibold">
-            Get started
-          </button>
+<Link to="/signup" className="px-8 py-4 bg-white text-indigo-600 rounded-xl hover:bg-gray-100 transition-all duration-300 transform hover:-translate-y-0.5 shadow-lg hover:shadow-xl font-semibold inline-block">
+              Get started
+            </Link>
         </section>
 
         {/* Footer */}
