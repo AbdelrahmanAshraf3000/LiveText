@@ -50,7 +50,7 @@ class AssetServiceTest {
     void setUp() {
         MinioProperties props = new MinioProperties(
                 "http://localhost:9000", "http://localhost:9000",
-                "test", "test", "test-bucket", Duration.ofMinutes(10));
+                "test", "test", "test-bucket", "us-east-1", Duration.ofMinutes(10));
         assetService = new AssetService(assetRepo, documentRepo, userRepo,
                 permissionService, minioClient, minioPresignClient, props);
     }

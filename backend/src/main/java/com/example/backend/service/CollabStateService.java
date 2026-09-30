@@ -6,6 +6,7 @@ import com.example.backend.entity.Document;
 import com.example.backend.repository.CollabStateRepository;
 import com.example.backend.repository.CollabUpdateRepository;
 import com.example.backend.repository.DocumentRepository;
+import com.example.backend.exception.DocumentNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -77,6 +78,7 @@ public class CollabStateService {
         CollabState state = stateRepo.findById(docId).orElseGet(() -> {
             CollabState s = new CollabState();
             s.setDocumentId(docId);
+            s.setDocument(documentRepo.findById(docId).orElseThrow(() -> new DocumentNotFoundException(docId)));
             return s;
         });
         state.setSnapshot(snapshotBytes);
@@ -96,6 +98,7 @@ public class CollabStateService {
         CollabState state = stateRepo.findById(docId).orElseGet(() -> {
             CollabState s = new CollabState();
             s.setDocumentId(docId);
+            s.setDocument(documentRepo.findById(docId).orElseThrow(() -> new DocumentNotFoundException(docId)));
             return s;
         });
         state.setSnapshot(yjsStateBytes);

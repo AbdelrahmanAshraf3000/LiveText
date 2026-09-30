@@ -168,12 +168,14 @@ public class YjsWebSocketHandler extends BinaryWebSocketHandler {
     }
 
     private void sendMessage(WebSocketSession session, byte[] data) {
-        try {
-            if (session.isOpen()) {
-                session.sendMessage(new BinaryMessage(data));
+        synchronized (session) {
+            try {
+                if (session.isOpen()) {
+                    session.sendMessage(new BinaryMessage(data));
+                }
+            } catch (Exception e) {
+                log.error("Failed to send to {}: {}", session.getId(), e.getMessage());
             }
-        } catch (Exception e) {
-            log.error("Failed to send to {}: {}", session.getId(), e.getMessage());
         }
     }
 

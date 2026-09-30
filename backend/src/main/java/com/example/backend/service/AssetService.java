@@ -76,9 +76,11 @@ public class AssetService {
 
         String mime = file.getContentType();
         if (mime == null || !mime.startsWith("image/")) {
+            log.error("Upload failed for doc {} by user {}: invalid MIME type {}", documentId, uploaderId, mime);
             throw new IllegalArgumentException("Only image files are allowed");
         }
         if (file.getSize() > MAX_IMAGE_SIZE) {
+            log.error("Upload failed for doc {} by user {}: file size {} exceeds limit", documentId, uploaderId, file.getSize());
             throw new IllegalArgumentException("Image size must not exceed 5MB");
         }
 
@@ -106,13 +108,15 @@ public class AssetService {
         }
 
         Asset asset = new Asset();
+        UUID assetId = UUID.randomUUID();
+        asset.setId(assetId);
         asset.setDocument(doc);
         asset.setUploader(uploader);
         asset.setFileName(originalName);
         asset.setMimeType(mime);
         asset.setByteSize(file.getSize());
         asset.setObjectKey(objectKey);
-        asset.setUrl("/api/assets/" + asset.getId());
+        asset.setUrl("/api/assets/" + assetId);
         asset = assetRepo.save(asset);
 
         log.info("Uploaded asset {} ({} bytes) to MinIO key {}", asset.getId(), file.getSize(), objectKey);
@@ -152,10 +156,12 @@ public class AssetService {
 
     private void ensureBucket() {
         if (bucketInitialized.get()) {
+            log.debug("MinIO bucket '{}' already initialized", props.bucket());
             return;
         }
         synchronized (this) {
             if (bucketInitialized.get()) {
+                log.debug("MinIO bucket '{}' already initialized (after acquiring lock)", props.bucket());
                 return;
             }
             try {

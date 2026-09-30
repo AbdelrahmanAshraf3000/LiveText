@@ -22,6 +22,7 @@ public class MinioConfig {
         return MinioClient.builder()
                 .endpoint(props.endpoint())
                 .credentials(props.accessKey(), props.secretKey())
+                .region(props.region())
                 .build();
     }
 
@@ -32,6 +33,9 @@ public class MinioConfig {
         return MinioClient.builder()
                 .endpoint(publicEndpoint)
                 .credentials(props.accessKey(), props.secretKey())
+                // Avoid region discovery through the browser-facing endpoint. The backend
+                // cannot resolve localhost when it runs in the Compose network.
+                .region(props.region())
                 .build();
     }
 }

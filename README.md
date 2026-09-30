@@ -144,6 +144,7 @@ The backend is fully env-driven (see `backend/src/main/resources/application.pro
 | `MINIO_ACCESS_KEY`   | `minioadmin` (`MINIO_ROOT_USER`)                                     | MinIO access key |
 | `MINIO_SECRET_KEY`   | `minioadmin` (`MINIO_ROOT_PASSWORD`)                                 | MinIO secret key |
 | `MINIO_BUCKET`       | `livetext-assets`                                                    | Bucket for image assets (auto-created on first upload) |
+| `MINIO_REGION`       | `us-east-1`                                                          | MinIO region used for request signing and presigned URLs |
 | `MINIO_PRESIGN_EXPIRY` | `10m`                                                              | Expiry for presigned GET URLs |
 
 ---

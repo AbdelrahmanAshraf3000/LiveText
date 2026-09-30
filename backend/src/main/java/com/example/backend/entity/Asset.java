@@ -3,7 +3,6 @@ package com.example.backend.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -24,7 +23,6 @@ import java.util.UUID;
 public class Asset {
 
     @Id
-    @GeneratedValue
     private UUID id;
 
     @ManyToOne
@@ -57,6 +55,12 @@ public class Asset {
 
     @PrePersist
     void onCreate() {
+        if (id == null) {
+            id = UUID.randomUUID();
+        }
+        if (url == null) {
+            url = "/api/assets/" + id;
+        }
         this.createdAt = LocalDateTime.now();
     }
 }

@@ -3,7 +3,10 @@ export interface ApiResponse<T> {
   message: string;
   data: T;
 }
-
+export interface UploadResult {
+  id: string;
+  url: string;
+}
 export interface User {
   id: number;
   username: string;
