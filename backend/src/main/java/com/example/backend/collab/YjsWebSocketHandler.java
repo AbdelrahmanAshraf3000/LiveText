@@ -44,20 +44,6 @@ public class YjsWebSocketHandler extends BinaryWebSocketHandler {
             redisBroadcaster.subscribe(docId, messageBytes -> onRedisMessage(docId, messageBytes));
         }
 
-        byte[] snapshot = collabStateService.getSnapshot(docId);
-        if (snapshot != null && snapshot.length > 0) {
-            sendMessage(session, YjsProtocol.buildSyncStep2(snapshot));
-            log.debug("Sent snapshot sync-step2 ({} bytes) to {}", snapshot.length, username);
-        }
-
-        for (CollabUpdate u : collabStateService.getBufferedUpdates(docId)) {
-            sendMessage(session, YjsProtocol.buildSyncStep2(u.getUpdate()));
-        }
-
-        byte[] vector = collabStateService.getSnapshotStateVector(docId);
-        byte[] vectorToSend = (vector != null) ? vector : new byte[]{0};
-        sendMessage(session, YjsProtocol.buildSyncStep1(vectorToSend));
-
         if (Boolean.TRUE.equals(readOnly)) {
             log.info("Viewer {} connected to doc {} (read-only)", username, docId);
         } else {
@@ -96,11 +82,17 @@ public class YjsWebSocketHandler extends BinaryWebSocketHandler {
         switch (syncType) {
             case YjsProtocol.SYNC_STEP1 -> {
                 byte[] snapshot = collabStateService.getSnapshot(docId);
+                boolean sentState = false;
                 if (snapshot != null && snapshot.length > 0) {
                     sendMessage(session, YjsProtocol.buildSyncStep2(snapshot));
+                    sentState = true;
                 }
                 for (CollabUpdate u : collabStateService.getBufferedUpdates(docId)) {
                     sendMessage(session, YjsProtocol.buildSyncStep2(u.getUpdate()));
+                    sentState = true;
+                }
+                if (!sentState) {
+                    sendMessage(session, YjsProtocol.buildSyncStep2(new byte[0]));
                 }
                 log.debug("Handled sync-step1 from {} (full-send, no engine diff)", session.getId());
             }
@@ -130,14 +122,14 @@ public class YjsWebSocketHandler extends BinaryWebSocketHandler {
 
     private void publishUpdate(UUID docId, WebSocketSession sender, byte[] messageBytes) {
         String payload = sender.getId() + "\n" + Base64.getEncoder().encodeToString(messageBytes);
-        boolean published = false;
+        // Always fan out to sessions on this instance. Redis is used for
+        // cross-instance delivery and must not be the only path for local
+        // collaborators.
+        broadcastToLocalOthers(docId, sender, messageBytes);
         try {
-            published = redisBroadcaster.publishString(docId, payload);
+            redisBroadcaster.publishString(docId, payload);
         } catch (Exception e) {
             log.warn("Redis publish failed for doc {}: {}", docId, e.getMessage());
-        }
-        if (!published) {
-            broadcastToLocalOthers(docId, sender, messageBytes);
         }
     }
 

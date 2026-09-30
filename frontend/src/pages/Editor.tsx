@@ -65,6 +65,7 @@ export default function Editor() {
   const [doc, setDoc] = useState<DocumentItem | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [editorReady, setEditorReady] = useState(false);
   const [connectedUsers, setConnectedUsers] = useState<PresenceUser[]>([]);
   const [connStatus, setConnStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
 
@@ -147,6 +148,7 @@ export default function Editor() {
     if (!id || !doc || !editorRef.current) return;
 
     const isViewer = doc.viewerRole === 'VIEWER';
+    setEditorReady(false);
 
     // Create Yjs document
     const ydoc = new Y.Doc();
@@ -178,6 +180,7 @@ export default function Editor() {
       placeholder: isViewer ? 'Document is read-only' : 'Start writing...',
     });
     quillRef.current = quill;
+    quill.enable(false);
 
     // Connect to collaboration server
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -190,8 +193,29 @@ export default function Editor() {
 
     setConnStatus('connecting');
     provider.on('status', (event: { status: string }) => {
-      setConnStatus(event.status === 'connected' ? 'connected' : 'disconnected');
+      setConnStatus(
+        event.status === 'connected'
+          ? 'connected'
+          : event.status === 'connecting'
+            ? 'connecting'
+            : 'disconnected',
+      );
     });
+
+    // The server sends the persisted snapshot and any buffered updates as
+    // separate messages. Wait briefly after the initial Yjs sync event before
+    // showing Quill so the snapshot is not visible on its own. This transition
+    // must be bounded: remote edits can continue indefinitely after syncing.
+    let syncRevealTimer: ReturnType<typeof setTimeout> | null = null;
+    const handleSync = (synced: boolean) => {
+      if (synced) {
+        syncRevealTimer = setTimeout(() => {
+          quill.enable(!isViewer);
+          setEditorReady(true);
+        }, 100);
+      }
+    };
+    provider.on('sync', handleSync);
 
     // Set awareness user info (name + color for cursor)
     const existingCursorColors = Array.from(provider.awareness.getStates().values())
@@ -206,17 +230,21 @@ export default function Editor() {
     // Track connected users via awareness
     const updatePresence = () => {
       const states = provider.awareness.getStates();
-      const users: PresenceUser[] = [];
+      const usersByName = new Map<string, PresenceUser>();
       states.forEach((state, clientId) => {
         if (state.user) {
-          users.push({
+          const presenceUser = {
             clientId,
             name: state.user.name || `User ${clientId}`,
             color: state.user.color || '#888',
-          });
+          };
+          const previous = usersByName.get(presenceUser.name);
+          if (!previous || clientId > previous.clientId) {
+            usersByName.set(presenceUser.name, presenceUser);
+          }
         }
       });
-      setConnectedUsers(users);
+      setConnectedUsers(Array.from(usersByName.values()));
     };
     provider.awareness.on('change', updatePresence);
     updatePresence();
@@ -248,6 +276,8 @@ export default function Editor() {
     return () => {
       updatePresence();
       if (snapshotTimer) clearInterval(snapshotTimer);
+      if (syncRevealTimer) clearTimeout(syncRevealTimer);
+      provider.off('sync', handleSync);
       binding.destroy();
       provider.destroy();
       ydoc.destroy();
@@ -406,10 +436,17 @@ export default function Editor() {
               </button>
             </div>
           )}
-          <div
-            ref={editorRef}
-            className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 min-h-[600px]"
-          />
+            <div
+              ref={editorRef}
+              className={`relative bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 min-h-[600px] ${
+                editorReady ? 'visible' : 'invisible'
+              }`}
+            />
+            {!editorReady && (
+              <div className="absolute inset-0 flex items-center justify-center text-sm text-gray-500 dark:text-gray-400">
+                Synchronizing document...
+              </div>
+            )}
         </div>
       </div>
     </div>
